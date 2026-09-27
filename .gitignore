@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.log
+npm-debug.log*
+.env*
+.DS_Store
+.angular/
+test-results/
+*/**/e2e/reports/
+.codex/
+r3nd/*
+!r3nd/tech_specs/
+!r3nd/build_plans/
+!r3nd/test_cases/
+# r3nd configuration (user-specific, not committed)
+r3nd.yaml
