@@ -1,0 +1,44 @@
+services:
+  pg:
+    image: postgres:17.4-alpine
+    environment: { POSTGRES_USER: starter, POSTGRES_PASSWORD: starter, POSTGRES_DB: starter }
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U starter -d starter']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  app:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://starter:starter@pg:5432/starter
+      SUPERTOKENS_CONNECTION_URI: http://127.0.0.1:3567
+      POSTGRESQL_CONNECTION_URI: postgresql://starter:starter@pg:5432/starter
+      API_KEYS: ${SUPERTOKENS_API_KEY}
+      SUPERTOKENS_API_KEY: ${SUPERTOKENS_API_KEY}
+      APP_ORIGIN: http://localhost:3000
+      API_DOMAIN: http://localhost:3000
+      WEBSITE_DOMAIN: http://localhost:3000
+    ports: ['3000:3000']
+    depends_on:
+      pg:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      {
+        test:
+          [
+            'CMD',
+            'node',
+            '-e',
+            "fetch('http://localhost:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          ],
+        interval: 10s,
+        timeout: 3s,
+        retries: 6,
+      }
+volumes: { pg-data: {} }

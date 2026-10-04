@@ -1,0 +1,39 @@
+services:
+  pg:
+    image: postgres:17.4-alpine
+    environment: { POSTGRES_USER: starter, POSTGRES_PASSWORD: starter, POSTGRES_DB: starter }
+    volumes: [pg-data:/var/lib/postgresql/data]
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:10.1.1
+    environment:
+      {
+        POSTGRESQL_CONNECTION_URI: postgresql://starter:starter@pg:5432/starter,
+        API_KEYS: change-this-to-a-long-random-value,
+      }
+    depends_on: [pg]
+  api:
+    build: { context: ., target: development }
+    command: npm run dev:api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://starter:starter@pg:5432/starter
+      SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
+      # These defaults match the local Core service. A .env file may override them.
+      SUPERTOKENS_API_KEY: ${SUPERTOKENS_API_KEY:-change-this-to-a-long-random-value}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      API_DOMAIN: ${API_DOMAIN:-http://localhost:8080}
+      WEBSITE_DOMAIN: ${WEBSITE_DOMAIN:-http://localhost:8080}
+    volumes: ['.:/workspace', api-node-modules:/workspace/node_modules]
+    depends_on: [pg, supertokens]
+  web:
+    build: { context: ., target: development }
+    command: npm run dev:web
+    volumes: ['.:/workspace', web-node-modules:/workspace/node_modules]
+  nginx:
+    image: nginx:1.27-alpine
+    ports: ['8080:80']
+    volumes: ['./docker/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro']
+    depends_on: [api, web]
+volumes: { pg-data: {}, api-node-modules: {}, web-node-modules: {} }
